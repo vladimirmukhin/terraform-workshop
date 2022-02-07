@@ -16,6 +16,7 @@ resource "aws_instance" "public" {
   vpc_security_group_ids      = [aws_security_group.public.id]
   subnet_id                   = aws_subnet.public[0].id
   key_name                    = "main"
+  iam_instance_profile        = "${var.environment_code}-s3-access"
 
   tags = {
     Name = "${var.environment_code}-Public"
@@ -53,4 +54,45 @@ resource "aws_security_group" "public" {
   tags = {
     Name = "${var.environment_code}-Public"
   }
+}
+
+resource "aws_iam_role" "main" {
+  name = "${var.environment_code}-main"
+  assume_role_policy = jsonencode(
+    {
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = "sts:AssumeRole"
+          Effect = "Allow"
+          Sid    = ""
+          Principal = {
+            Service = "ec2.amazonaws.com"
+          }
+        },
+      ]
+    }
+  )
+
+  inline_policy {
+    name = "s3FullAccess"
+
+    policy = jsonencode(
+      {
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Action   = ["s3:*"]
+            Effect   = "Allow"
+            Resource = "*"
+          },
+        ]
+      }
+    )
+  }
+}
+
+resource "aws_iam_instance_profile" "main" {
+  name = "${var.environment_code}-main"
+  role = aws_iam_role.main.name
 }
