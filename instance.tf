@@ -17,6 +17,15 @@ resource "aws_instance" "public" {
   subnet_id                   = aws_subnet.public[0].id
   iam_instance_profile        = "${var.environment_code}-main"
 
+  user_data = <<EOF
+    #!/bin/bash
+    yum update -y
+    yum install -y httpd git
+    git clone https://github.com/gabrielecirulli/2048.git
+    cp -R 2048/* /var/www/html
+    systemctl start httpd && systemctl enable httpd
+  EOF
+
   tags = {
     Name = "${var.environment_code}-Public"
   }
