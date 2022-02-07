@@ -15,8 +15,7 @@ resource "aws_instance" "public" {
   instance_type               = "t2.micro"
   vpc_security_group_ids      = [aws_security_group.public.id]
   subnet_id                   = aws_subnet.public[0].id
-  key_name                    = "main"
-  iam_instance_profile        = "${var.environment_code}-s3-access"
+  iam_instance_profile        = "${var.environment_code}-main"
 
   tags = {
     Name = "${var.environment_code}-Public"
@@ -27,14 +26,6 @@ resource "aws_security_group" "public" {
   name        = "${var.environment_code}-Public"
   description = "Allows SSH and HTTP"
   vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["98.180.121.31/32"]
-  }
 
   ingress {
     description = "HTTP"
@@ -95,4 +86,10 @@ resource "aws_iam_role" "main" {
 resource "aws_iam_instance_profile" "main" {
   name = "${var.environment_code}-main"
   role = aws_iam_role.main.name
+}
+
+resource "aws_iam_policy_attachment" "ssm" {
+  name       = "${var.environment_code}-ssm"
+  roles      = [aws_iam_role.main.name]
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
